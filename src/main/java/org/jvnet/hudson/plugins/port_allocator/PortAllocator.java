@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
  *
  * @author Rama Pulavarthi
  */
+@Extension
 public class PortAllocator extends SimpleBuildWrapper
 {
     private static final Log log = LogFactory.getLog(PortAllocator.class);
@@ -42,8 +43,6 @@ public class PortAllocator extends SimpleBuildWrapper
 
 	private String pool;
 	private final List<String> pools = Lists.newArrayList();
-	private final List<String> plainports = Lists.newArrayList();
-	private final List<PortType> genericPorts = Lists.newArrayList();
 
 	private PortAllocator(PortType[] ports) {
 		if (ports != null) {
@@ -55,18 +54,6 @@ public class PortAllocator extends SimpleBuildWrapper
 	@DataBoundConstructor
 	public PortAllocator() {
 	// empty 
-	}
-
-	@DataBoundSetter
-	public void setPool(String pool) {
-		if (pool != null) {
-			this.ports.add(new PooledPortType(pool));
-			this.pool = pool;
-		}
-	}
-
-	public String getPool() {
-		return this.pool;
 	}
 
 	@DataBoundSetter
@@ -84,19 +71,13 @@ public class PortAllocator extends SimpleBuildWrapper
 	}
 
 	@DataBoundSetter
-	public void setPlainports(String[] plainports) {
-		if (plainports != null) {
-			for (String port : plainports) {
-				this.ports.add(new DefaultPortType(port));
-				this.plainports.add(port);
+	public void setPorts(PortType[] ports) {
+		if (ports != null) {
+			for (PortType port : ports) {
+				this.ports.add(port);
 			}
 		}
 	}
-
-	public String[] getPlainports() {
-		return this.plainports.toArray(new String[this.plainports.size()]);
-	}
-
 
     @Override
     public void setUp(Context context, Run<?, ?> run, FilePath workspace, Launcher launcher, TaskListener taskListener, EnvVars envVars) throws IOException, InterruptedException {
@@ -104,7 +85,8 @@ public class PortAllocator extends SimpleBuildWrapper
 
         Computer cur = workspace.toComputer();
         Map<String,Integer> prefPortMap = new HashMap<String,Integer>();
-	Run<?, ?> prevBuild  = run.getPreviousBuild();
+        Run<?, ?> prevBuild  = run.getPreviousBuild();
+
         if (prevBuild != null) {
             AllocatedPortAction prevAlloc = prevBuild.getAction(AllocatedPortAction.class);
             if (prevAlloc != null) {
@@ -147,6 +129,7 @@ public class PortAllocator extends SimpleBuildWrapper
     public static final DescriptorImpl DESCRIPTOR = new DescriptorImpl();
 
     @Symbol("portallocator")
+    @Extension
     public static final class DescriptorImpl extends Descriptor<BuildWrapper> {
 
         private List<Pool> pools = new ArrayList<Pool>();

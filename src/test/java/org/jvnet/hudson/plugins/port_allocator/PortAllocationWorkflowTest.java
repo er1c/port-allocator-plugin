@@ -16,6 +16,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runners.MethodSorters;
+import org.junit.runners.model.Statement;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.RestartableJenkinsRule;
 
@@ -26,80 +27,150 @@ import java.util.List;
 public class PortAllocationWorkflowTest {
 
     @Rule
-    public JenkinsRule j = new JenkinsRule();
+    public RestartableJenkinsRule story = new RestartableJenkinsRule();
 
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder();
 
-    @Test
-    public void wrap_01_WithNonExistingPool() throws Exception {
-        j.jenkins.addNode(new DumbSlave("slave", "dummy",
-            tmp.newFolder("remoteFS").getPath(), "1", Node.Mode.NORMAL, "",
-            j.createComputerLauncher(null), RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList()));
-        WorkflowJob p = j.jenkins.createProject(WorkflowJob.class, "p");
-        p.setDefinition(new CpsFlowDefinition(
-            "node('slave') {\n"
-                + "  wrap([$class: 'PortAllocator', pools: ['WEBLOGIC']]) {\n"
-                + "  }\n"
-                + "}"
-        ));
-        j.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
+    @Test public void wrap_01_WithNonExistingPool() {
+        story.addStep(new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                DumbSlave dummy = new DumbSlave(
+                    "slave",
+                    "dummy",
+                    tmp.newFolder("remoteFS").getPath(),
+                    "1",
+                    Node.Mode.NORMAL,
+                    "",
+                    story.j.createComputerLauncher(null),
+                    RetentionStrategy.NOOP,
+                    Collections.<NodeProperty<?>>emptyList()
+                );
+
+                story.j.jenkins.addNode(dummy);
+                WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p");
+                p.setDefinition(new CpsFlowDefinition(
+                        "node('slave') {\n"
+                                + "  portallocator(pools: ['WEBLOGIC']]) {\n"
+                                + "  }\n"
+                                + "}"
+                ));
+                story.j.assertBuildStatus(Result.FAILURE, p.scheduleBuild2(0).get());
+            }
+        });
     }
 
     @Test
-    public void wrap_02_WithExistingPool() throws Exception {
-        j.jenkins.addNode(new DumbSlave("slave", "dummy",
-            tmp.newFolder("remoteFS").getPath(), "1", Node.Mode.NORMAL, "",
-            j.createComputerLauncher(null), RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList()));
-        PortAllocator.DescriptorImpl desc = j.jenkins.getDescriptorByType(PortAllocator.DescriptorImpl.class);
-        Pool weblogic = new Pool();
-        weblogic.name = "WEBLOGIC";
-        weblogic.ports = "7001,8001";
-        desc.getPools().add(weblogic);
-        WorkflowJob p = j.jenkins.createProject(WorkflowJob.class, "p");
-        p.setDefinition(new CpsFlowDefinition(
-            "node('slave') {\n"
-                + "  wrap([$class: 'PortAllocator', pools: ['WEBLOGIC']]) {\n"
-                + "  }\n"
-                + "}"
-        ));
-        j.assertBuildStatusSuccess(p.scheduleBuild2(0));
+    public void wrap_02_WithExistingPool() {
+        story.addStep(new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                DumbSlave dummy = new DumbSlave(
+                    "slave",
+                    "dummy",
+                    tmp.newFolder("remoteFS").getPath(),
+                    "1",
+                    Node.Mode.NORMAL,
+                    "",
+                    story.j.createComputerLauncher(null),
+                    RetentionStrategy.NOOP,
+                    Collections.<NodeProperty<?>>emptyList()
+                );
+
+                story.j.jenkins.addNode(dummy);
+
+                PortAllocator.DescriptorImpl desc = story.j.jenkins.getDescriptorByType(PortAllocator.DescriptorImpl.class);
+                Pool weblogic = new Pool();
+                weblogic.name = "WEBLOGIC";
+                weblogic.ports = "7001,8001";
+
+                desc.getPools().add(weblogic);
+
+                WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p");
+
+                p.setDefinition(new CpsFlowDefinition(
+                        "node('slave') {\n"
+                                + "  portallocator(pool: 'WEBLOGIC') {\n"
+                                + "  }\n"
+                                + "}"
+                ));
+                story.j.assertBuildStatusSuccess(p.scheduleBuild2(0));
+            }
+        });
     }
 
     @Test
-    public void wrap_03_WithExistingLegacyPool() throws Exception {
-        j.jenkins.addNode(new DumbSlave("slave", "dummy",
-            tmp.newFolder("remoteFS").getPath(), "1", Node.Mode.NORMAL, "",
-            j.createComputerLauncher(null), RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList()));
-        PortAllocator.DescriptorImpl desc = j.jenkins.getDescriptorByType(PortAllocator.DescriptorImpl.class);
-        Pool weblogic = new Pool();
-        weblogic.name = "WEBLOGIC";
-        weblogic.ports = "7001,8001";
-        desc.getPools().add(weblogic);
-        WorkflowJob p = j.jenkins.createProject(WorkflowJob.class, "p");
-        p.setDefinition(new CpsFlowDefinition(
-            "node('slave') {\n"
-                + "   wrap([$class: 'PortAllocator', pool: 'WEBLOGIC']){\n"
-                + "  }\n"
-                + "}"
-        ));
-        j.assertBuildStatusSuccess(p.scheduleBuild2(0));
+    public void wrap_03_WithExistingLegacyPool() {
+        story.addStep(new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+                DumbSlave dummy = new DumbSlave(
+                    "slave",
+                    "dummy",
+                    tmp.newFolder("remoteFS").getPath(),
+                    "1",
+                    Node.Mode.NORMAL,
+                    "",
+                    story.j.createComputerLauncher(null),
+                    RetentionStrategy.NOOP,
+                    Collections.<NodeProperty<?>>emptyList()
+                );
+
+                story.j.jenkins.addNode(dummy);
+
+                PortAllocator.DescriptorImpl desc = story.j.jenkins.getDescriptorByType(PortAllocator.DescriptorImpl.class);
+
+                Pool weblogic = new Pool();
+                weblogic.name = "WEBLOGIC";
+                weblogic.ports = "7001,8001";
+                desc.getPools().add(weblogic);
+
+                WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p");
+
+                p.setDefinition(new CpsFlowDefinition(
+                        "node('slave') {\n"
+                                + "   portallocator('WEBLOGIC') {\n"
+                                + "  }\n"
+                                + "}"
+                ));
+                story.j.assertBuildStatusSuccess(p.scheduleBuild2(0));
+            }
+        });
     }
 
     @Test
-    public void wrap_04_WithPlainPort() throws Exception {
-        j.jenkins.addNode(new DumbSlave("slave", "dummy",
-            tmp.newFolder("remoteFS").getPath(), "1", Node.Mode.NORMAL, "",
-            j.createComputerLauncher(null), RetentionStrategy.NOOP, Collections.<NodeProperty<?>>emptyList()));
-        PortAllocator.DescriptorImpl desc = j.jenkins.getDescriptorByType(PortAllocator.DescriptorImpl.class);
-        WorkflowJob p = j.jenkins.createProject(WorkflowJob.class, "p");
-        p.setDefinition(new CpsFlowDefinition(
-            "node('slave') {\n"
-                + "  wrap([$class: 'PortAllocator', plainports: ['PLAINPORT']]) {\n"
-                + "  }\n"
-                + "}"
-        ));
-        j.assertBuildStatusSuccess(p.scheduleBuild2(0));
+    public void wrap_04_WithPlainPort() {
+        story.addStep(new Statement() {
+            @Override
+            public void evaluate() throws Throwable {
+
+                DumbSlave dummy = new DumbSlave(
+                    "slave",
+                    "dummy",
+                    tmp.newFolder("remoteFS").getPath(),
+                    "1",
+                    Node.Mode.NORMAL,
+                    "",
+                    story.j.createComputerLauncher(null),
+                    RetentionStrategy.NOOP,
+                    Collections.<NodeProperty<?>>emptyList()
+                );
+
+                story.j.jenkins.addNode(dummy);
+
+                PortAllocator.DescriptorImpl desc = story.j.jenkins.getDescriptorByType(PortAllocator.DescriptorImpl.class);
+
+                WorkflowJob p = story.j.jenkins.createProject(WorkflowJob.class, "p");
+                p.setDefinition(new CpsFlowDefinition(
+                        "node('slave') {\n"
+                                + "  portallocator {\n"
+                                + "  }\n"
+                                + "}"
+                ));
+                story.j.assertBuildStatusSuccess(p.scheduleBuild2(0));
+            }
+        });
     }
 
 }

@@ -34,7 +34,7 @@ public abstract class PortType implements ExtensionPoint, Describable<PortType>,
     }
 
     /**
-     * If this port type has a fixed port number, return that value.
+     * @return If this port type has a fixed port number, return that value.
      * Otherwise 0.
      */
     public final int getFixedPort() {
@@ -46,7 +46,7 @@ public abstract class PortType implements ExtensionPoint, Describable<PortType>,
     }
 
     /**
-     * Returns true if this port type has a fixed port number.
+     * @return true if this port type has a fixed port number.
      */
     public final boolean isFixedPort() {
         return getFixedPort()!=0;
@@ -59,8 +59,15 @@ public abstract class PortType implements ExtensionPoint, Describable<PortType>,
      * @param manager
      *      This can be used to assign a new TCP port number.
      * @param prefPort
-     *  The port number allocated to this type the last time.
+     *      The port number allocated to this type the last time.
      * @param launcher
+     *      A Launcher object
+     * @param taskListener
+     *      A TaskListener object
+     *
+     * @return The allocated {@link Port}
+     * @throws InterruptedException if the allocation was interrupted
+     * @throws IOException if the allocation failed
      */
     public abstract Port allocate(Run<?, ?> run, PortAllocationManager manager, int prefPort, Launcher launcher, TaskListener taskListener) throws IOException, InterruptedException;
 

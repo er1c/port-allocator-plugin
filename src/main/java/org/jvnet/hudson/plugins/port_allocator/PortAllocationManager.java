@@ -4,6 +4,7 @@ import hudson.Extension;
 import hudson.model.Computer;
 import hudson.model.Run;
 import hudson.remoting.Callable;
+import jenkins.security.MasterToSlaveCallable;
 import org.jenkinsci.remoting.RoleChecker;
 
 import java.io.IOException;
@@ -47,9 +48,14 @@ public final class PortAllocationManager implements Serializable {
      * <p>
      * If the preferred port is not available, assigns a random available port.
      *
+     * @param run the current build
      * @param prefPort
-     *      Preffered port. This method trys to assign this port, and upon failing, fall back to
+     *      Prefered port. This method trys to assign this port, and upon failing, fall back to
      *      assigning a random port.
+     *
+     * @return allocated TCP port number
+     * @throws InterruptedException if the allocation was interrupted
+     * @throws IOException if the allocation failed
      */
     public synchronized int allocateRandom(Run<?, ?> run, int prefPort) throws InterruptedException, IOException {
         int i;
@@ -128,6 +134,12 @@ public final class PortAllocationManager implements Serializable {
      * Assigns the requested port.
      *
      * This method blocks until the port becomes available.
+     *
+     * @param run the current build
+     * @param port TCP port to be allocated
+     * @return the allocated TCP port
+     * @throws InterruptedException if the allocation was interrupted
+     * @throws IOException if the allocation failed
      */
     public synchronized int allocate(Run<?, ?> run, int port) throws InterruptedException, IOException {
         while (ports.get(port) != null)
@@ -233,7 +245,7 @@ public final class PortAllocationManager implements Serializable {
         private static final long serialVersionUID = 1L;
     }
 
-    private static final class AllocateTask implements Callable<Integer,IOException> {
+    private static final class AllocateTask extends MasterToSlaveCallable<Integer, IOException> {
         private final int port;
 
         public AllocateTask(int port) {
@@ -256,10 +268,6 @@ public final class PortAllocationManager implements Serializable {
         }
 
         private static final long serialVersionUID = 1L;
-
-        @Override
-        public void checkRoles(RoleChecker roleChecker) throws SecurityException {
-        }
     }
 
     private static final long serialVersionUID = 1L;
